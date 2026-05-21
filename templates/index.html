@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>ReFlix — Movie Reviews</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">ReFlix</div>
+    <div class="topbar-right">
+      <input id="movieSearch" class="search" placeholder="Search movies..." />
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <h1 class="hero-title">Browse Movies</h1>
+      <p class="hero-subtitle">Click a poster to open that movie page and see all reviews + Summary + NER.</p>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <section class="row">
+      <div class="row-head">
+        <h2>Movies</h2>
+        <div class="muted" id="movieCount"></div>
+      </div>
+
+      <div id="movieGrid" class="grid-posters"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

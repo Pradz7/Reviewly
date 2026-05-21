@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{{ movie.title }} — Reviews</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">MovieFlix</a>
+    <div class="topbar-right">
+      <a class="pill small" href="/">← Back to movies</a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content hero-movie">
+      {% if movie.poster_url %}
+        <img class="hero-poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster"/>
+      {% endif %}
+      <div>
+        <h1 class="hero-title">{{ movie.title }}</h1>
+        <p class="hero-subtitle">
+          {% if movie.year %}{{ movie.year }}{% endif %}
+          {% if movie.genre %}
+            {% if movie.year %} &nbsp;•&nbsp; {% endif %}
+            {{ movie.genre }}
+          {% endif %}
+          &nbsp;•&nbsp; Click a review to see original + summary + NER.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <section class="row">
+      <div class="row-head">
+        <h2>All Reviews</h2>
+        <div class="muted" id="reviewsCount"></div>
+      </div>
+
+      <div id="reviewsListPage" class="reviews-page"></div>
+      <div id="reviewsEmptyPage" class="muted empty hidden">No reviews found for this movie.</div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div id="modalOverlay" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal">
+      <button id="modalClose" class="modal-close" aria-label="Close">✕</button>
+
+      <div class="modal-head">
+        <div class="modal-meta">
+          <div class="modal-movie" id="detailMovie"></div>
+          <div class="modal-badges">
+            <span class="badge" id="detailRatingBadge">⭐ N/A</span>
+            <span class="badge subtle" id="detailRowIdBadge">ID</span>
+          </div>
+        </div>
+        <div id="detailTitleRow" class="modal-title-row hidden">
+          <div class="modal-title" id="detailTitle"></div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="col">
+          <h3>Original</h3>
+          <div id="detailOriginal" class="panel pre"></div>
+        </div>
+
+        <div class="col">
+          <h3>Summary</h3>
+          <div class="panel">
+            <ul id="detailSummaryList" class="bullets"></ul>
+          </div>
+
+          <h3>NER-labeled summary</h3>
+          <div id="detailHighlighted" class="panel highlight"></div>
+          <div id="detailLegend" class="legend"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Safely pass movie JSON to JS -->
+  <script id="movie-data" type="application/json">{{ movie|tojson }}</script>
+  <script>
+    window.__MOVIE__ = JSON.parse(document.getElementById("movie-data").textContent);
+  </script>
+
+  <!-- Load page logic once -->
+  <script src="/static/movie.js"></script>
+</body>
+</html>
