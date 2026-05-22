@@ -1,38 +1,246 @@
 <!doctype html>
-<html>
+<html class="dark" lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>ReFlix — Movie Reviews</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reviewly — Movie Reviews</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
   <link rel="stylesheet" href="/static/styles.css" />
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "bg-main": "#0D0D12",
+            "bg-secondary": "#17171F",
+            "bg-card": "#20202A",
+            "bg-elevated": "#292934",
+            "bg-input": "#111118",
+            "primary": "#FFB703",
+            "secondary": "#E63946",
+            "ai": "#4CC9F0",
+            "text-primary": "#F8FAFC",
+            "text-secondary": "#CBD5E1",
+            "text-muted": "#94A3B8",
+            "border-soft": "#343442"
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+      background: #0D0D12;
+      color: #F8FAFC;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    }
+
+    .hero-glow {
+      background:
+        radial-gradient(circle at top left, rgba(255, 183, 3, 0.16), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(76, 201, 240, 0.12), transparent 38%),
+        #0D0D12;
+    }
+
+    /* This part helps old app.js movie cards still look good */
+    .grid-posters a,
+    .grid-posters .poster-card,
+    .grid-posters .movie-card {
+      background: #20202A;
+      border: 1px solid #343442;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      transition: 0.25s ease;
+      text-decoration: none;
+      color: #F8FAFC;
+    }
+
+    .grid-posters a:hover,
+    .grid-posters .poster-card:hover,
+    .grid-posters .movie-card:hover {
+      transform: translateY(-8px);
+      border-color: rgba(255, 183, 3, 0.45);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    .grid-posters img {
+      width: 100%;
+      height: 330px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .grid-posters h3,
+    .grid-posters .title {
+      color: #F8FAFC;
+      font-size: 18px;
+      font-weight: 700;
+      margin: 14px 16px 6px;
+    }
+
+    .grid-posters p,
+    .grid-posters .meta {
+      color: #94A3B8;
+      font-size: 14px;
+      margin: 0 16px 16px;
+    }
+  </style>
 </head>
-<body>
-  <header class="topbar">
-    <div class="brand">ReFlix</div>
-    <div class="topbar-right">
-      <input id="movieSearch" class="search" placeholder="Search movies..." />
-    </div>
+
+<body class="min-h-screen bg-bg-main text-text-primary antialiased">
+
+  <!-- NAVBAR -->
+  <header class="fixed top-0 left-0 z-50 w-full border-b border-border-soft/60 bg-bg-main/85 backdrop-blur-xl">
+    <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <a href="/" class="text-3xl font-extrabold tracking-tight text-text-primary">
+        Review<span class="text-primary">ly</span>
+      </a>
+
+      <div class="hidden items-center gap-8 md:flex">
+        <a href="/" class="border-b-2 border-primary pb-1 text-sm font-semibold text-primary">Home</a>
+        <a href="#movies" class="text-sm font-medium text-text-secondary transition hover:text-primary">Movies</a>
+        <a href="#about" class="text-sm font-medium text-text-secondary transition hover:text-primary">About</a>
+        <a href="https://github.com/Pradz7/Reviewly" target="_blank" class="text-sm font-medium text-text-secondary transition hover:text-primary">GitHub</a>
+      </div>
+
+      <div class="flex items-center gap-3 text-primary">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="material-symbols-outlined">account_circle</span>
+      </div>
+    </nav>
   </header>
 
-  <section class="hero">
-    <div class="hero-bg"></div>
-    <div class="hero-content">
-      <h1 class="hero-title">Browse Movies</h1>
-      <p class="hero-subtitle">Click a poster to open that movie page and see all reviews + Summary + NER.</p>
+  <!-- HERO -->
+  <section class="hero-glow flex min-h-[620px] items-center pt-24">
+    <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr]">
+
+      <div>
+        <p class="mb-4 inline-flex rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
+          Movie Review Summarization + NER
+        </p>
+
+        <h1 class="max-w-2xl text-4xl font-extrabold leading-tight text-text-primary md:text-6xl">
+          Understand movie reviews faster with <span class="text-primary">AI</span>
+        </h1>
+
+        <p class="mt-6 max-w-xl text-base leading-8 text-text-secondary md:text-lg">
+          Browse movies, open a movie page, read reviews, generate summaries, and detect important named entities using NLP.
+        </p>
+
+        <div class="mt-8 flex flex-col gap-4 sm:flex-row">
+          <a href="#movies" class="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-bold text-black transition hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(255,183,3,0.25)]">
+            Browse Movies
+          </a>
+
+          <a href="#about" class="inline-flex items-center justify-center rounded-full border border-border-soft px-6 py-3 text-sm font-semibold text-text-primary transition hover:border-ai hover:bg-ai/10 hover:text-ai">
+            How It Works
+          </a>
+        </div>
+      </div>
+
+      <div class="rounded-3xl border border-border-soft bg-bg-card/80 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.45)]">
+        <div class="rounded-2xl border border-ai/30 bg-ai/10 p-5">
+          <div class="mb-3 flex items-center gap-2 text-ai">
+            <span class="material-symbols-outlined">auto_awesome</span>
+            <h3 class="font-bold">AI Summary Preview</h3>
+          </div>
+
+          <p class="text-sm leading-7 text-text-secondary">
+            Reviewly can transform long movie reviews into clear summaries and extract entities such as actors, characters, places, organizations, and movie titles.
+          </p>
+        </div>
+
+        <div class="mt-5 rounded-2xl border border-primary/30 bg-primary/10 p-5">
+          <h3 class="mb-3 font-bold text-primary">Detected Entities</h3>
+
+          <div class="flex flex-wrap gap-2">
+            <span class="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">PERSON</span>
+            <span class="rounded-full border border-ai/40 bg-ai/10 px-3 py-1 text-xs font-bold text-ai">MOVIE</span>
+            <span class="rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-bold text-red-300">ORG</span>
+            <span class="rounded-full border border-teal-400/40 bg-teal-400/10 px-3 py-1 text-xs font-bold text-teal-300">LOCATION</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
-  <main class="wrap">
-    <section class="row">
-      <div class="row-head">
-        <h2>Movies</h2>
-        <div class="muted" id="movieCount"></div>
+  <!-- MOVIES SECTION -->
+  <main id="movies" class="bg-bg-secondary">
+    <section class="mx-auto max-w-7xl px-6 py-20">
+
+      <div class="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+        <div>
+          <h2 class="text-3xl font-bold text-text-primary md:text-4xl">
+            Browse Movies
+          </h2>
+          <p class="mt-3 text-text-muted">
+            Click a poster to open that movie page and see all reviews, summary, and NER results.
+          </p>
+        </div>
+
+        <!-- IMPORTANT: app.js uses this id -->
+        <div class="w-full md:w-[420px]">
+          <input
+            id="movieSearch"
+            class="w-full rounded-full border border-border-soft bg-bg-input px-5 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-muted focus:border-primary focus:ring-4 focus:ring-primary/10"
+            placeholder="Search movies..."
+          />
+        </div>
       </div>
 
-      <div id="movieGrid" class="grid-posters"></div>
+      <div class="mb-6 flex items-center justify-between">
+        <h3 class="text-xl font-bold text-text-primary">Movies</h3>
+
+        <!-- IMPORTANT: app.js uses this id -->
+        <div class="text-sm text-text-muted" id="movieCount"></div>
+      </div>
+
+      <!-- IMPORTANT: app.js will put the movie cards here -->
+      <div id="movieGrid" class="grid-posters grid gap-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+
     </section>
   </main>
 
+  <!-- ABOUT -->
+  <section id="about" class="border-t border-border-soft bg-bg-main">
+    <div class="mx-auto max-w-7xl px-6 py-16">
+      <div class="max-w-3xl">
+        <h2 class="text-3xl font-bold text-text-primary">About Reviewly</h2>
+        <p class="mt-4 leading-8 text-text-secondary">
+          Reviewly is an NLP-based website that combines movie review summarization and Named Entity Recognition. It helps users understand long reviews faster by showing a short summary and important entities detected from the text.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-border-soft bg-[#0A0A0E]">
+    <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-8 md:flex-row">
+      <div class="font-bold text-primary">Reviewly</div>
+      <p class="text-sm text-text-muted">© 2024 Reviewly. AI-powered cinematic insights.</p>
+      <div class="flex gap-5 text-sm text-text-muted">
+        <a href="#" class="hover:text-text-secondary">Privacy Policy</a>
+        <a href="#" class="hover:text-text-secondary">Terms</a>
+        <a href="#" class="hover:text-text-secondary">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- IMPORTANT: this connects your existing JavaScript -->
   <script src="/static/app.js"></script>
 </body>
 </html>
