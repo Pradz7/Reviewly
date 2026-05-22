@@ -458,6 +458,17 @@ POSTER_MAP: Dict[str, str] = {}
 
 
 def load_poster_map() -> None:
+    """
+    Supports both poster CSV formats:
+
+    1. Old local image format:
+       movie_id,poster_file
+       tt4154796,tt4154796.jpg
+
+    2. New OMDb URL format:
+       movie_id,title,poster_url
+       tt4154796,Avengers: Endgame,https://...
+    """
     global POSTER_MAP
 
     path = os.path.join(os.path.dirname(__file__), "posters.csv")
@@ -469,12 +480,25 @@ def load_poster_map() -> None:
     dfp = pd.read_csv(path)
     out: Dict[str, str] = {}
 
-    for _, r in dfp.dropna().iterrows():
-        mid = str(r.get("movie_id", "")).strip()
-        pf = str(r.get("poster_file", "")).strip()
+    for _, r in dfp.dropna(how="all").iterrows():
+        movie_id = str(r.get("movie_id", "")).strip()
+        title = str(r.get("title", "")).strip()
 
-        if mid and pf:
-            out[mid] = pf
+        poster_url = str(r.get("poster_url", "")).strip()
+        poster_file = str(r.get("poster_file", "")).strip()
+
+        poster_value = ""
+
+        if poster_url and poster_url.lower() != "nan" and poster_url != "N/A":
+            poster_value = poster_url
+        elif poster_file and poster_file.lower() != "nan":
+            poster_value = f"/static/posters/{poster_file}"
+
+        if movie_id and poster_value:
+            out[movie_id] = poster_value
+
+        if title and title.lower() != "nan" and poster_value:
+            out[title] = poster_value
 
     POSTER_MAP = out
 
@@ -483,18 +507,16 @@ load_poster_map()
 
 
 def poster_url_for_movie_id(movie_id: str, title: str = "") -> str:
-    mid = "" if movie_id is None else str(movie_id).strip()
-    t = "" if title is None else str(title).strip()
+    movie_id = "" if movie_id is None else str(movie_id).strip()
+    title = "" if title is None else str(title).strip()
 
-    f = POSTER_MAP.get(mid, "")
+    if movie_id and movie_id in POSTER_MAP:
+        return POSTER_MAP[movie_id]
 
-    if not f and t:
-        f = POSTER_MAP.get(t, "")
+    if title and title in POSTER_MAP:
+        return POSTER_MAP[title]
 
-    if not f:
-        return ""
-
-    return f"/static/posters/{f}"
+    return ""
 
 
 def _pick_poster_col(df: pd.DataFrame) -> str | None:
@@ -1482,7 +1504,7 @@ def list_movies_rich(limit: int = 200) -> List[Dict[str, Any]]:
         if POSTER_COL:
             poster = str(r.get(POSTER_COL) or "").strip()
 
-        if not poster:
+        if not poster or poster.lower() == "nan" or poster == "N/A":
             poster = poster_url_for_movie_id(movie_id, title=title)
 
         if not poster:
