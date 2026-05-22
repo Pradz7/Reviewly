@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{{ movie.title }} — Reviews</title>
+  <title>{{ movie.title }}</title>
 
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 
@@ -39,254 +39,310 @@
   </script>
 
   <style>
-  body {
-    font-family: "Inter", sans-serif;
-    background: #0D0D12;
-    color: #F8FAFC;
-  }
-
-  .material-symbols-outlined {
-    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
-  }
-
-  .material-symbols-outlined.fill {
-    font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
-  }
-
-  .movie-hero {
-    background:
-      radial-gradient(circle at top left, rgba(255, 183, 3, 0.14), transparent 30%),
-      radial-gradient(circle at bottom right, rgba(76, 201, 240, 0.1), transparent 38%),
-      #0D0D12;
-  }
-
-  .hidden {
-    display: none !important;
-  }
-
-  #reviewsListPage {
-    display: grid;
-    gap: 18px;
-  }
-
-  #reviewsListPage > * {
-    background: #20202A;
-    border: 1px solid #343442;
-    border-radius: 20px;
-    padding: 22px;
-    color: #F8FAFC;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
-    transition: 0.2s ease;
-    cursor: pointer;
-  }
-
-  #reviewsListPage > *:hover {
-    transform: translateY(-3px);
-    border-color: rgba(76, 201, 240, 0.45);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
-  }
-
-  #reviewsListPage h3,
-  #reviewsListPage .title {
-    color: #F8FAFC;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-
-  #reviewsListPage p,
-  #reviewsListPage .muted {
-    color: #CBD5E1;
-    line-height: 1.7;
-  }
-
-  /* FIXED MODAL POSITIONING */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    background: rgba(0, 0, 0, 0.72);
-    backdrop-filter: blur(10px);
-    overflow-y: auto;
-    padding: 24px;
-  }
-
-  .modal {
-    width: min(1100px, calc(100vw - 48px));
-    margin: 24px auto;
-    background: #17171F;
-    border: 1px solid #343442;
-    border-radius: 24px;
-    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
-    position: relative;
-    padding: 28px;
-  }
-
-  .modal-close {
-    position: absolute;
-    top: 18px;
-    right: 18px;
-    width: 38px;
-    height: 38px;
-    border-radius: 999px;
-    border: 1px solid #343442;
-    background: #20202A;
-    color: #F8FAFC;
-    font-weight: 800;
-    cursor: pointer;
-    z-index: 5;
-  }
-
-  .modal-close:hover {
-    border-color: #FFB703;
-    color: #FFB703;
-  }
-
-  .modal-head {
-    padding-right: 50px;
-    margin-bottom: 24px;
-  }
-
-  .modal-movie {
-    color: #FFB703;
-    font-weight: 800;
-    font-size: 18px;
-    margin-bottom: 10px;
-  }
-
-  .modal-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 999px;
-    background: rgba(255, 183, 3, 0.12);
-    color: #FFB703;
-    border: 1px solid rgba(255, 183, 3, 0.35);
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 800;
-  }
-
-  .badge.subtle {
-    background: rgba(148, 163, 184, 0.12);
-    color: #CBD5E1;
-    border-color: rgba(148, 163, 184, 0.35);
-  }
-
-  .modal-title {
-    font-size: 28px;
-    font-weight: 800;
-    color: #F8FAFC;
-  }
-
-  .modal-body {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 22px;
-    align-items: start;
-  }
-
-  .col {
-    min-width: 0;
-  }
-
-  .col h3 {
-    font-size: 18px;
-    color: #F8FAFC;
-    margin: 0 0 12px;
-    font-weight: 800;
-  }
-
-  .panel {
-    background: #20202A;
-    border: 1px solid #343442;
-    border-radius: 18px;
-    padding: 20px;
-    color: #CBD5E1;
-    line-height: 1.8;
-    overflow-wrap: anywhere;
-  }
-
-  .pre {
-    white-space: pre-wrap;
-  }
-
-  .highlight {
-    margin-top: 0;
-    border-color: rgba(76, 201, 240, 0.35);
-    background:
-      linear-gradient(145deg, rgba(76, 201, 240, 0.08), transparent),
-      #20202A;
-  }
-
-  .bullets {
-    margin: 0;
-    padding-left: 20px;
-    color: #CBD5E1;
-    line-height: 1.8;
-  }
-
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-  }
-
-  .legend span {
-    border-radius: 999px;
-    border: 1px solid rgba(255, 183, 3, 0.35);
-    color: #FFB703;
-    background: rgba(255, 183, 3, 0.1);
-    padding: 6px 10px;
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  mark {
-    background: rgba(255, 183, 3, 0.22);
-    color: #FFB703;
-    border-radius: 6px;
-    padding: 2px 5px;
-  }
-
-  @media (max-width: 900px) {
-    .modal-body {
-      grid-template-columns: 1fr;
+    body {
+      font-family: "Inter", sans-serif;
+      background: #0D0D12;
+      color: #F8FAFC;
     }
-  }
 
-  @media (max-width: 768px) {
+    .material-symbols-outlined {
+      font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    }
+
+    .material-symbols-outlined.fill {
+      font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+    }
+
+    .movie-hero {
+      background:
+        radial-gradient(circle at top left, rgba(255, 183, 3, 0.14), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(76, 201, 240, 0.1), transparent 38%),
+        #0D0D12;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    #reviewsListPage {
+      display: grid;
+      gap: 18px;
+    }
+
+    #reviewsListPage > * {
+      background: #20202A;
+      border: 1px solid #343442;
+      border-radius: 20px;
+      padding: 22px;
+      color: #F8FAFC;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+      transition: 0.2s ease;
+      cursor: pointer;
+    }
+
+    #reviewsListPage > *:hover {
+      transform: translateY(-3px);
+      border-color: rgba(76, 201, 240, 0.45);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    #reviewsListPage h3,
+    #reviewsListPage .title {
+      color: #F8FAFC;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    #reviewsListPage p,
+    #reviewsListPage .muted {
+      color: #CBD5E1;
+      line-height: 1.7;
+    }
+
     .modal-overlay {
-      padding: 12px;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(10px);
+      overflow-y: auto;
+      padding: 24px;
     }
 
     .modal {
-      width: calc(100vw - 24px);
-      margin: 12px auto;
-      padding: 20px;
-      border-radius: 20px;
+      width: min(1080px, calc(100vw - 48px));
+      margin: 32px auto;
+      background: #17171F;
+      border: 1px solid #343442;
+      border-radius: 24px;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+      position: relative;
+      padding: 32px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid #343442;
+      background: #20202A;
+      color: #F8FAFC;
+      font-weight: 800;
+      cursor: pointer;
+      z-index: 5;
+    }
+
+    .modal-close:hover {
+      border-color: #FFB703;
+      color: #FFB703;
     }
 
     .modal-head {
-      padding-right: 44px;
+      padding-right: 56px;
+      margin-bottom: 28px;
+    }
+
+    .modal-movie {
+      color: #FFB703;
+      font-weight: 800;
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    .modal-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      background: rgba(255, 183, 3, 0.12);
+      color: #FFB703;
+      border: 1px solid rgba(255, 183, 3, 0.35);
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .badge.subtle {
+      background: rgba(148, 163, 184, 0.12);
+      color: #CBD5E1;
+      border-color: rgba(148, 163, 184, 0.35);
     }
 
     .modal-title {
-      font-size: 22px;
+      font-size: 28px;
+      font-weight: 800;
+      color: #F8FAFC;
     }
-  }
-</style>
+
+    .modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      align-items: stretch;
+      width: 100%;
+    }
+
+    .review-top-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+      width: 100%;
+    }
+
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+      width: 100%;
+    }
+
+    .analysis-grid > div {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .analysis-grid .panel {
+      height: 100%;
+    }
+
+    #detailInsightsBox {
+      grid-column: 1 / -1;
+    }
+
+    .ai-label-section {
+      width: 100%;
+    }
+
+    .col {
+      min-width: 0;
+    }
+
+    .col h3,
+    .ai-label-section h3 {
+      font-size: 18px;
+      color: #F8FAFC;
+      margin: 0 0 12px;
+      font-weight: 800;
+    }
+
+    .panel {
+      background: #20202A;
+      border: 1px solid #343442;
+      border-radius: 18px;
+      padding: 20px;
+      color: #CBD5E1;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .pre {
+      white-space: pre-wrap;
+    }
+
+    .highlight {
+      margin-top: 0;
+      border-color: rgba(76, 201, 240, 0.35);
+      background:
+        linear-gradient(145deg, rgba(76, 201, 240, 0.08), transparent),
+        #20202A;
+    }
+
+    .bullets {
+      margin: 0;
+      padding-left: 20px;
+      color: #CBD5E1;
+      line-height: 1.8;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .legend span,
+    .chip {
+      border-radius: 999px;
+      border: 1px solid rgba(255, 183, 3, 0.35);
+      color: #FFB703;
+      background: rgba(255, 183, 3, 0.1);
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    mark,
+    .ent {
+      background: rgba(230, 57, 70, 0.22);
+      color: #F8FAFC;
+      border: 1px solid rgba(230, 57, 70, 0.55);
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin: 0 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    mark::after,
+    .ent::after {
+      content: attr(data-label);
+      color: #CBD5E1;
+      font-size: 12px;
+      margin-left: 4px;
+      opacity: 0.85;
+    }
+
+    @media (max-width: 900px) {
+      .review-top-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .analysis-grid {
+        grid-template-columns: 1fr;
+      }
+
+      #detailInsightsBox {
+        grid-column: auto;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .modal-overlay {
+        padding: 12px;
+      }
+
+      .modal {
+        width: calc(100vw - 24px);
+        margin: 12px auto;
+        padding: 20px;
+        border-radius: 20px;
+      }
+
+      .modal-head {
+        padding-right: 44px;
+      }
+
+      .modal-title {
+        font-size: 22px;
+      }
+    }
+  </style>
 </head>
 
 <body class="min-h-screen bg-bg-main text-text-primary antialiased">
 
-  <!-- NAVBAR -->
   <header class="fixed top-0 left-0 z-50 w-full border-b border-border-soft/60 bg-bg-main/85 backdrop-blur-xl">
     <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
       <a href="/" class="text-3xl font-extrabold tracking-tight text-text-primary">
@@ -297,7 +353,6 @@
         <a href="/" class="text-sm font-medium text-text-secondary transition hover:text-primary">Home</a>
         <a href="/" class="border-b-2 border-primary pb-1 text-sm font-semibold text-primary">Movies</a>
         <a href="/#about" class="text-sm font-medium text-text-secondary transition hover:text-primary">About</a>
-        <a href="https://github.com/Pradz7/Reviewly" target="_blank" class="text-sm font-medium text-text-secondary transition hover:text-primary">GitHub</a>
       </div>
 
       <a href="/" class="rounded-full border border-border-soft px-4 py-2 text-sm font-semibold text-text-secondary transition hover:border-primary hover:text-primary">
@@ -306,7 +361,6 @@
     </nav>
   </header>
 
-  <!-- MOVIE HERO -->
   <section class="movie-hero pt-28">
     <div class="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 py-16 md:grid-cols-[280px_1fr] md:items-center">
 
@@ -339,12 +393,12 @@
           {% endif %}
 
           <span class="rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-primary">
-            Summary + NER
+            Summary + AI Labels
           </span>
         </div>
 
         <p class="mt-6 max-w-3xl text-base leading-8 text-text-secondary md:text-lg">
-          Click a review below to see the original review, generated summary, and NER-labeled summary.
+          Click a review below to see the original review, generated summary, sentiment analysis, keywords, review insights, and AI-labeled summary.
         </p>
 
         <div class="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -361,7 +415,6 @@
     </div>
   </section>
 
-  <!-- AI INFO PREVIEW -->
   <section class="bg-bg-main">
     <div class="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 pb-8 md:grid-cols-3">
 
@@ -378,10 +431,10 @@
       <div class="rounded-3xl border border-primary/30 bg-primary/10 p-6">
         <div class="mb-3 flex items-center gap-2 text-primary">
           <span class="material-symbols-outlined">sell</span>
-          <h3 class="font-bold">NER Entities</h3>
+          <h3 class="font-bold">AI Labels</h3>
         </div>
         <p class="text-sm leading-7 text-text-secondary">
-          Detects people, movie titles, organizations, locations, and other important terms.
+          Detects actors, characters, movie titles, locations, organizations, and review aspects such as story, acting, pacing, and ending.
         </p>
       </div>
 
@@ -391,14 +444,13 @@
           <h3 class="font-bold">Review Explorer</h3>
         </div>
         <p class="text-sm leading-7 text-text-secondary">
-          Select any review and open the analysis in a detailed modal.
+          Select any review and open the analysis in a clean detailed modal.
         </p>
       </div>
 
     </div>
   </section>
 
-  <!-- REVIEWS SECTION -->
   <main id="reviews" class="bg-bg-secondary">
     <section class="mx-auto max-w-7xl px-6 py-20">
 
@@ -406,18 +458,15 @@
         <div>
           <h2 class="text-3xl font-bold text-text-primary md:text-4xl">All Reviews</h2>
           <p class="mt-3 text-text-muted">
-            Choose a review to view the original text, summary, and NER result.
+            Choose a review to view the original text, summary, sentiment, keywords, and AI label results.
           </p>
         </div>
 
-        <!-- IMPORTANT: movie.js uses this id -->
         <div class="text-sm text-text-muted" id="reviewsCount"></div>
       </div>
 
-      <!-- IMPORTANT: movie.js fills this -->
       <div id="reviewsListPage"></div>
 
-      <!-- IMPORTANT: movie.js uses this -->
       <div id="reviewsEmptyPage" class="hidden rounded-3xl border border-dashed border-border-soft bg-bg-card p-10 text-center text-text-muted">
         No reviews found for this movie.
       </div>
@@ -425,7 +474,6 @@
     </section>
   </main>
 
-  <!-- MODAL: IMPORTANT IDs kept for movie.js -->
   <div id="modalOverlay" class="modal-overlay hidden" aria-hidden="true">
     <div class="modal">
       <button id="modalClose" class="modal-close" aria-label="Close">✕</button>
@@ -446,26 +494,33 @@
       </div>
 
       <div class="modal-body">
-        <div class="col">
-          <h3>Original Review</h3>
-          <div id="detailOriginal" class="panel pre"></div>
-        </div>
 
-        <div class="col">
-          <h3>Summary</h3>
-          <div class="panel">
-            <ul id="detailSummaryList" class="bullets"></ul>
+        <div class="review-top-grid">
+          <div class="col">
+            <h3>Original Review</h3>
+            <div id="detailOriginal" class="panel pre"></div>
           </div>
 
-          <h3 class="mt-6">NER-labeled Summary</h3>
+          <div class="col">
+            <h3>Summary</h3>
+            <div class="panel">
+              <ul id="detailSummaryList" class="bullets"></ul>
+            </div>
+          </div>
+        </div>
+
+        <div id="dynamicAnalysisCards" class="analysis-grid"></div>
+
+        <div class="ai-label-section">
+          <h3>AI-labeled Summary</h3>
           <div id="detailHighlighted" class="panel highlight"></div>
           <div id="detailLegend" class="legend"></div>
         </div>
+
       </div>
     </div>
   </div>
 
-  <!-- FOOTER -->
   <footer class="border-t border-border-soft bg-[#0A0A0E]">
     <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-8 md:flex-row">
       <div class="font-bold text-primary">Reviewly</div>
@@ -478,13 +533,11 @@
     </div>
   </footer>
 
-  <!-- Safely pass movie JSON to JS -->
   <script id="movie-data" type="application/json">{{ movie|tojson }}</script>
   <script>
     window.__MOVIE__ = JSON.parse(document.getElementById("movie-data").textContent);
   </script>
 
-  <!-- IMPORTANT: connects the page to your existing movie.js -->
-  <script src="/static/movie.js?v=7"></script>
+  <script src="/static/movie.js?v=14"></script>
 </body>
 </html>

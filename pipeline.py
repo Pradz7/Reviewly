@@ -14,12 +14,137 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 MOVIE_COL = "title"
 TEXT_COL = "review_clean"
 
-BAD_LABELS = {"CARDINAL", "ORDINAL", "QUANTITY", "PERCENT", "MONEY", "TIME", "DATE"}
+BAD_LABELS = {
+    "CARDINAL", "ORDINAL", "QUANTITY", "PERCENT", "MONEY", "TIME", "DATE",
+    "PRODUCT", "LAW", "LANGUAGE"
+}
+
+AMBIGUOUS_MOVIE_TITLES = {
+    "it", "its", "us", "her", "up", "saw", "sing", "cars", "old", "fresh",
+    "home", "life", "room", "split", "mother", "nope", "what", "open",
+    "close", "run", "go", "big", "small", "yes", "no"
+}
+
+BLOCKED_ENTITY_WORDS = {
+    "it", "its", "they", "them", "he", "she", "him", "her", "his", "hers",
+    "we", "you", "your", "i", "me", "my", "mine", "our", "ours", "their",
+    "theirs", "this", "that", "these", "those", "what", "whattt", "whatttt",
+    "whattttt", "huh", "yeah", "wow", "lol", "haha", "okay", "ok", "nope",
+    "yes", "no", "maybe", "thing", "stuff",
+
+    "open", "opened", "opening", "close", "closed", "closing", "start",
+    "started", "starting", "enter", "entered", "entering", "leave", "left",
+    "run", "runs", "running", "hide", "hiding", "ask", "asked", "asking",
+    "go", "goes", "going", "went", "know", "knowing", "think", "thinking",
+
+    "door", "garage", "building", "shelter", "trail", "car", "beast",
+    "thing", "stuff"
+}
+
+ACTOR_NAMES = {
+    "leonardo dicaprio", "kate winslet", "christopher nolan", "cillian murphy",
+    "robert pattinson", "margot robbie", "ryan gosling", "florence pugh",
+    "timothee chalamet", "timothée chalamet", "zendaya", "tom hardy",
+    "christian bale", "heath ledger", "joaquin phoenix", "anne hathaway",
+    "matt damon", "benedict cumberbatch", "sam mendes", "george mackay",
+    "dean-charles chapman", "vikrant massey", "vidhu vinod chopra",
+    "irfan khan", "amitabh bachchan", "shah rukh khan", "aamir khan",
+    "salman khan", "deepika padukone", "alia bhatt", "ranbir kapoor",
+    "song kang ho", "choi woo shik", "park so dam", "bong joon ho",
+    "tom hanks", "meryl streep", "brad pitt", "angelina jolie",
+    "keanu reeves", "laurence fishburne", "carrie-anne moss",
+    "emma stone", "andrew garfield", "tobey maguire", "daniel radcliffe",
+    "emma watson", "rupert grint", "jennifer lawrence", "josh hutcherson",
+    "daisy ridley", "adam driver", "harrison ford", "mark hamill",
+    "natalie portman", "denzel washington", "morgan freeman",
+    "anthony hopkins", "jodie foster", "sigourney weaver"
+}
+
+CHARACTER_NAMES = {
+    "jack dawson", "rose dewitt bukater", "oppenheimer", "j robert oppenheimer",
+    "barbie", "ken", "batman", "bruce wayne", "joker", "arthur fleck",
+    "paul atreides", "chani", "frodo baggins", "gandalf", "aragorn",
+    "harry potter", "hermione granger", "ron weasley", "voldemort",
+    "luke skywalker", "darth vader", "princess leia", "han solo",
+    "neo", "trinity", "morpheus", "john wick", "james bond",
+    "katniss everdeen", "peeta mellark", "forrest gump", "hannibal lecter",
+    "clarice starling", "ellen ripley", "indiana jones", "rocky balboa",
+    "vito corleone", "michael corleone", "tyler durden", "amelie",
+    "tony montana", "travis bickle", "simba", "mufasa", "woody", "buzz lightyear"
+}
+
+REVIEW_ASPECT_TERMS = {
+    "story": "ASPECT",
+    "storyline": "ASPECT",
+    "plot": "ASPECT",
+    "ending": "ASPECT",
+    "beginning": "ASPECT",
+    "middle": "ASPECT",
+    "pacing": "ASPECT",
+    "pace": "ASPECT",
+    "acting": "ASPECT",
+    "performance": "ASPECT",
+    "performances": "ASPECT",
+    "cast": "ASPECT",
+    "character": "ASPECT",
+    "characters": "ASPECT",
+    "dialogue": "ASPECT",
+    "dialogues": "ASPECT",
+    "script": "ASPECT",
+    "screenplay": "ASPECT",
+    "direction": "ASPECT",
+    "director": "ASPECT",
+    "cinematography": "ASPECT",
+    "visuals": "ASPECT",
+    "visual effects": "ASPECT",
+    "effects": "ASPECT",
+    "vfx": "ASPECT",
+    "soundtrack": "ASPECT",
+    "music": "ASPECT",
+    "score": "ASPECT",
+    "sound": "ASPECT",
+    "tension": "ASPECT",
+    "suspense": "ASPECT",
+    "emotion": "ASPECT",
+    "emotional": "ASPECT",
+    "comedy": "ASPECT",
+    "humor": "ASPECT",
+    "action": "ASPECT",
+    "fight": "ASPECT",
+    "war": "ASPECT",
+    "aliens": "ASPECT",
+    "alien": "ASPECT",
+    "monster": "ASPECT",
+    "meteor": "ASPECT",
+    "space": "ASPECT",
+    "dinosaur": "ASPECT",
+    "dinosaurs": "ASPECT",
+    "film": "ASPECT",
+    "movie": "ASPECT",
+    "sequel": "ASPECT",
+    "prequel": "ASPECT",
+    "climax": "ASPECT",
+    "twist": "ASPECT",
+    "theme": "ASPECT",
+    "message": "ASPECT",
+    "experience": "ASPECT",
+}
+
+LABEL_MAP = {
+    "PERSON": "PERSON",
+    "ORG": "ORGANIZATION",
+    "GPE": "LOCATION",
+    "LOC": "LOCATION",
+    "NORP": "GROUP",
+    "FAC": "LOCATION",
+    "WORK_OF_ART": "MOVIE_TITLE",
+    "MOVIE_TITLE": "MOVIE_TITLE",
+    "ACTOR": "ACTOR",
+    "CHARACTER": "CHARACTER",
+    "ASPECT": "ASPECT",
+}
 
 
-# -------------------------
-# Text cleaning
-# -------------------------
 def clean_text(text: str) -> str:
     text = str(text)
     text = re.sub(r"<br\s*/?>", " ", text, flags=re.IGNORECASE)
@@ -27,9 +152,92 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 
-# -------------------------
-# Sentiment Analysis
-# -------------------------
+def clamp(value, min_value, max_value):
+    return max(min_value, min(value, max_value))
+
+
+def parse_rating_value(rating):
+    if rating is None:
+        return None
+
+    s = str(rating).strip()
+    if not s:
+        return None
+
+    s = s.replace("/10", "").replace("⭐", "").strip()
+
+    match = re.search(r"\d+(?:\.\d+)?", s)
+    if not match:
+        return None
+
+    try:
+        value = float(match.group(0))
+    except Exception:
+        return None
+
+    if value > 10:
+        value = value / 10
+
+    if value < 0 or value > 10:
+        return None
+
+    return value
+
+
+def rating_to_compound(rating_value):
+    if rating_value is None:
+        return 0.0
+
+    return clamp((float(rating_value) - 5.0) / 5.0, -1.0, 1.0)
+
+
+def rating_to_label(rating_value):
+    if rating_value is None:
+        return None
+
+    if rating_value >= 7.0:
+        return "Positive"
+
+    if rating_value >= 5.0:
+        return "Mixed"
+
+    return "Negative"
+
+
+def is_stretched_word(text: str) -> bool:
+    text = clean_text(text).lower()
+
+    if len(text) < 4:
+        return False
+
+    if not re.fullmatch(r"[a-zA-Z]+", text):
+        return False
+
+    return bool(re.search(r"(.)\1{3,}", text))
+
+
+def is_weak_entity_text(text: str) -> bool:
+    text = clean_text(text)
+    lower = text.lower()
+
+    if not lower:
+        return True
+
+    if lower in BLOCKED_ENTITY_WORDS:
+        return True
+
+    if is_stretched_word(lower):
+        return True
+
+    if len(lower) <= 1:
+        return True
+
+    if re.fullmatch(r"[^\w]+", lower):
+        return True
+
+    return False
+
+
 sentiment_analyzer = SentimentIntensityAnalyzer()
 
 NEGATIVE_PHRASES = [
@@ -41,7 +249,13 @@ NEGATIVE_PHRASES = [
     "unnecessary", "decent but", "but in the end", "corruption angle",
     "love angle", "melodrama", "mockery", "soap", "has been done",
     "done before", "all kind of soapy", "couldn't care what happened",
-    "i couldn't care", "i could not care", "honestly", "much superior"
+    "i couldn't care", "i could not care", "honestly", "much superior",
+    "goes down hill", "down hill fast", "downhill fast", "ridiculousness",
+    "ridiculous", "got worse", "just got worse", "almost leave the theater",
+    "should have because", "that was so bad", "so bad", "plain terrible",
+    "just plain terrible", "cannot save this flop", "flop", "ugh",
+    "why do we need to accept", "unable to hit their target", "silly enough",
+    "not silly enough", "laughing at the ridiculousness"
 ]
 
 POSITIVE_PHRASES = [
@@ -51,7 +265,7 @@ POSITIVE_PHRASES = [
     "must watch", "recommend", "beautiful", "perfect", "strong acting",
     "great acting", "well made", "well-written", "enjoyed", "done justice",
     "real acting", "deserves it", "round of applause", "go and watch",
-    "learn from the best"
+    "learn from the best", "classic", "good"
 ]
 
 
@@ -77,62 +291,115 @@ def _normalize_scores(pos: float, neu: float, neg: float) -> Dict[str, float]:
     }
 
 
-def analyze_sentiment(text: str) -> Dict[str, Any]:
+def analyze_sentiment(text: str, rating=None) -> Dict[str, Any]:
     text = clean_text(text)
-    scores = sentiment_analyzer.polarity_scores(text)
+    lower = text.lower()
 
+    scores = sentiment_analyzer.polarity_scores(text)
     vader_compound = float(scores["compound"])
+
     positive_hits = _phrase_hits(text, POSITIVE_PHRASES)
     negative_hits = _phrase_hits(text, NEGATIVE_PHRASES)
 
-    pos = float(scores["pos"])
-    neu = float(scores["neu"])
-    neg = float(scores["neg"])
-    compound = vader_compound
+    text_compound = vader_compound
+
+    if positive_hits > negative_hits:
+        text_compound += min(0.20, 0.05 * (positive_hits - negative_hits))
 
     if negative_hits > positive_hits:
-        label = "Negative"
+        text_compound -= min(0.20, 0.05 * (negative_hits - positive_hits))
 
-        neg = min(0.85, max(neg, 0.45 + (negative_hits * 0.06)))
-        pos = min(pos, 0.12)
-        neu = max(0.03, 1.0 - neg - pos)
+    horror_content_words = [
+        "gruesome", "frightening", "disturbing", "scary", "scarred",
+        "violent", "violence", "cannibal", "cannibalistic", "horror",
+        "creepy", "brutal", "bloody", "terrifying", "gory"
+    ]
 
-        compound = max(-0.95, min(compound, -0.35 - (negative_hits * 0.05)))
+    praise_words = [
+        "good", "great", "remember", "recommend", "worth", "power",
+        "classic", "well", "strong", "liked", "love", "loved", "enjoyed",
+        "fan", "best"
+    ]
 
-    elif positive_hits > negative_hits:
-        label = "Positive"
+    horror_count = sum(1 for word in horror_content_words if word in lower)
+    praise_count = sum(1 for word in praise_words if word in lower)
 
-        pos = min(0.85, max(pos, 0.45 + (positive_hits * 0.06)))
-        neg = min(neg, 0.12)
-        neu = max(0.03, 1.0 - pos - neg)
+    if horror_count >= 2 and praise_count >= 1:
+        text_compound += 0.18
 
-        compound = min(0.95, max(compound, 0.35 + (positive_hits * 0.05)))
+    text_compound = clamp(text_compound, -1.0, 1.0)
 
+    rating_value = parse_rating_value(rating)
+    rating_compound = rating_to_compound(rating_value)
+    rating_label = rating_to_label(rating_value)
+
+    if rating_value is not None:
+        final_compound = (0.60 * text_compound) + (0.40 * rating_compound)
     else:
-        if compound >= 0.2:
+        final_compound = text_compound
+
+    final_compound = clamp(final_compound, -1.0, 1.0)
+
+    if rating_value is not None:
+        if rating_label == "Positive":
+            if text_compound <= -0.65 and negative_hits >= positive_hits + 2:
+                label = "Mixed"
+            else:
+                label = "Positive"
+
+        elif rating_label == "Negative":
+            if text_compound >= 0.65 and positive_hits >= negative_hits + 2:
+                label = "Mixed"
+            else:
+                label = "Negative"
+
+        else:
+            label = "Mixed"
+    else:
+        if final_compound >= 0.2:
             label = "Positive"
-        elif compound <= -0.2:
+        elif final_compound <= -0.2:
             label = "Negative"
         else:
-            label = "Neutral"
+            label = "Mixed"
 
-    normalized = _normalize_scores(pos, neu, neg)
+    strength = min(abs(final_compound), 1.0)
+
+    if label == "Positive":
+        positive = round(0.45 + (0.35 * strength), 3)
+        negative = round(max(0.05, 0.18 - (0.10 * strength)), 3)
+        neutral = round(max(0.05, 1.0 - positive - negative), 3)
+
+    elif label == "Negative":
+        negative = round(0.45 + (0.35 * strength), 3)
+        positive = round(max(0.05, 0.18 - (0.10 * strength)), 3)
+        neutral = round(max(0.05, 1.0 - positive - negative), 3)
+
+    else:
+        positive = round(0.25 + max(0.0, final_compound) * 0.10, 3)
+        negative = round(0.25 + max(0.0, -final_compound) * 0.10, 3)
+        neutral = round(max(0.30, 1.0 - positive - negative), 3)
+
+        total = positive + neutral + negative
+        positive = round(positive / total, 3)
+        neutral = round(neutral / total, 3)
+        negative = round(negative / total, 3)
 
     return {
         "label": label,
-        "compound": round(compound, 3),
-        "positive": normalized["positive"],
-        "neutral": normalized["neutral"],
-        "negative": normalized["negative"],
+        "compound": round(final_compound, 3),
+        "positive": positive,
+        "neutral": neutral,
+        "negative": negative,
         "positive_hits": positive_hits,
         "negative_hits": negative_hits,
         "vader_compound": round(vader_compound, 3),
+        "text_compound": round(text_compound, 3),
+        "rating_value": rating_value,
+        "rating_label": rating_label,
     }
 
 
-# -------------------------
-# Load dataset
-# -------------------------
 def load_dataset() -> pd.DataFrame:
     try:
         import kagglehub
@@ -187,10 +454,8 @@ def load_dataset() -> pd.DataFrame:
 df_all = load_dataset()
 
 
-# -------------------------
-# Poster mapping
-# -------------------------
 POSTER_MAP: Dict[str, str] = {}
+
 
 def load_poster_map() -> None:
     global POSTER_MAP
@@ -232,9 +497,6 @@ def poster_url_for_movie_id(movie_id: str, title: str = "") -> str:
     return f"/static/posters/{f}"
 
 
-# -------------------------
-# Poster + Genre helpers
-# -------------------------
 def _pick_poster_col(df: pd.DataFrame) -> str | None:
     candidates = [
         "poster", "poster_url", "poster_link", "image", "image_url",
@@ -323,9 +585,6 @@ def make_placeholder_poster(title: str) -> str:
     return "data:image/svg+xml;utf8," + urllib.parse.quote(svg)
 
 
-# -------------------------
-# spaCy setup
-# -------------------------
 def _ensure_sentencizer(nlp):
     if (
         "parser" not in nlp.pipe_names
@@ -337,13 +596,65 @@ def _ensure_sentencizer(nlp):
     return nlp
 
 
+def _build_movie_ruler_patterns(df: pd.DataFrame, max_titles: int = 1000):
+    patterns: List[Dict[str, Any]] = []
+
+    if MOVIE_COL in df.columns:
+        titles = (
+            df[MOVIE_COL]
+            .dropna()
+            .astype(str)
+            .map(str.strip)
+            .loc[lambda s: s.str.len().between(3, 80)]
+            .drop_duplicates()
+            .head(max_titles)
+            .tolist()
+        )
+
+        for title in titles:
+            title_clean = title.strip()
+            title_lower = title_clean.lower()
+
+            if title_lower in AMBIGUOUS_MOVIE_TITLES:
+                continue
+
+            if len(title_clean.split()) == 1 and len(title_clean) <= 3:
+                continue
+
+            patterns.append({
+                "label": "MOVIE_TITLE",
+                "pattern": title_clean
+            })
+
+    for actor in ACTOR_NAMES:
+        patterns.append({
+            "label": "ACTOR",
+            "pattern": actor.title()
+        })
+
+    for character in CHARACTER_NAMES:
+        patterns.append({
+            "label": "CHARACTER",
+            "pattern": character.title()
+        })
+
+    return patterns
+
+
+def _add_movie_ruler(nlp, df):
+    if "ner" not in nlp.pipe_names:
+        return nlp
+
+    if "entity_ruler" in nlp.pipe_names:
+        return nlp
+
+    ruler = nlp.add_pipe("entity_ruler", before="ner")
+    ruler.add_patterns(_build_movie_ruler_patterns(df))
+
+    return nlp
+
+
 def _load_spacy_nlps(df: pd.DataFrame):
-    """
-    Fast version:
-    Use only one small spaCy model.
-    Do not load transformer model.
-    Do not run two NER models per review.
-    """
     try:
         ner_base = spacy.load("en_core_web_sm")
     except Exception:
@@ -364,54 +675,9 @@ def _load_spacy_nlps(df: pd.DataFrame):
     return ner_trained, ner_base, nlp_sent
 
 
-def _build_movie_ruler_patterns(df: pd.DataFrame, max_titles: int = 2000):
-    patterns: List[Dict[str, Any]] = []
-
-    if MOVIE_COL in df.columns:
-        titles = (
-            df[MOVIE_COL]
-            .dropna()
-            .astype(str)
-            .map(str.strip)
-            .loc[lambda s: s.str.len().between(2, 80)]
-            .drop_duplicates()
-            .head(max_titles)
-            .tolist()
-        )
-
-        patterns.extend({"label": "WORK_OF_ART", "pattern": t} for t in titles)
-
-    patterns += [
-        {"label": "PERSON", "pattern": "Iron Man"},
-        {"label": "PERSON", "pattern": "Tony Stark"},
-        {"label": "PERSON", "pattern": "Steve Rogers"},
-        {"label": "PERSON", "pattern": "Thanos"},
-        {"label": "PERSON", "pattern": "Vikrant Massey"},
-        {"label": "PERSON", "pattern": "Vikrant"},
-    ]
-
-    return patterns
-
-
-def _add_movie_ruler(nlp, df):
-    if "ner" not in nlp.pipe_names:
-        return nlp
-
-    if "entity_ruler" in nlp.pipe_names:
-        return nlp
-
-    ruler = nlp.add_pipe("entity_ruler", before="ner")
-    ruler.add_patterns(_build_movie_ruler_patterns(df))
-
-    return nlp
-
-
 ner_trained, ner_base, nlp_sent = _load_spacy_nlps(df_all)
 
 
-# -------------------------
-# Summarization
-# -------------------------
 def split_sentences(text: str, min_len: int = 20) -> List[str]:
     doc = nlp_sent(str(text))
     sents = [s.text.strip() for s in doc.sents]
@@ -460,9 +726,6 @@ def extractive_summary(
     return [sents[i] for i in picked]
 
 
-# -------------------------
-# Keyword Extraction
-# -------------------------
 def extract_keywords(text: str, top_n: int = 8) -> List[str]:
     text = clean_text(text)
 
@@ -471,9 +734,7 @@ def extract_keywords(text: str, top_n: int = 8) -> List[str]:
 
     custom_stopwords = {
         "movie", "film", "review", "really", "just", "like",
-        "story", "watch", "watched", "thing", "things",
-        "make", "made", "makes", "time", "way", "end",
-        "character", "characters", "scene", "scenes"
+        "thing", "things", "make", "made", "makes", "time", "way", "end"
     }
 
     try:
@@ -523,7 +784,7 @@ def extract_keywords(text: str, top_n: int = 8) -> List[str]:
         stop = {
             "this", "that", "with", "have", "they", "from",
             "what", "when", "where", "which", "there", "their",
-            "about", "movie", "film", "review", "story", "watch"
+            "about", "movie", "film", "review"
         }
 
         freq = {}
@@ -537,29 +798,103 @@ def extract_keywords(text: str, top_n: int = 8) -> List[str]:
         return [word for word, count in ranked_words[:top_n]]
 
 
-# -------------------------
-# NER helpers
-# -------------------------
+def polish_entity_label(text: str, label: str, context: str = "") -> str:
+    entity = clean_text(text).lower()
+    context_lower = clean_text(context).lower()
+
+    if not entity:
+        return "IGNORE"
+
+    if is_weak_entity_text(entity):
+        return "IGNORE"
+
+    if entity in ACTOR_NAMES:
+        return "ACTOR"
+
+    if entity in CHARACTER_NAMES:
+        return "CHARACTER"
+
+    actor_context_words = [
+        "actor", "actress", "performance", "performed", "cast",
+        "played by", "starring", "role by", "directed by", "director"
+    ]
+
+    if label == "PERSON" and any(word in context_lower for word in actor_context_words):
+        return "ACTOR"
+
+    character_context_words = [
+        "character", "role", "villain", "hero", "protagonist",
+        "main character", "fictional"
+    ]
+
+    if label == "PERSON" and any(word in context_lower for word in character_context_words):
+        return "CHARACTER"
+
+    if label in {"WORK_OF_ART", "MOVIE_TITLE"}:
+        return "MOVIE_TITLE"
+
+    return LABEL_MAP.get(label, label)
+
+
 def _doc_ents_to_json(doc) -> List[Dict[str, Any]]:
-    return [
-        {
+    entities = []
+
+    for e in doc.ents:
+        context = ""
+
+        try:
+            context = e.sent.text
+        except Exception:
+            context = doc.text[max(0, e.start_char - 80): e.end_char + 80]
+
+        polished_label = polish_entity_label(
+            text=e.text,
+            label=e.label_,
+            context=context,
+        )
+
+        entities.append({
             "text": e.text,
-            "label": e.label_,
+            "label": polished_label,
+            "original_label": e.label_,
             "start": e.start_char,
             "end": e.end_char,
-        }
-        for e in doc.ents
-    ]
+        })
+
+    return entities
 
 
 def _filter_ents(ents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     out = []
 
     for e in ents:
-        if e["label"] in BAD_LABELS:
+        text = str(e.get("text", "")).strip()
+        label = str(e.get("label", "")).strip()
+        text_lower = text.lower()
+
+        if label == "IGNORE":
             continue
 
-        if len(str(e.get("text", "")).strip()) < 2:
+        if label in BAD_LABELS:
+            continue
+
+        if len(text) < 2:
+            continue
+
+        if is_weak_entity_text(text):
+            continue
+
+        if label in {"MOVIE_TITLE", "WORK_OF_ART"} and text_lower in AMBIGUOUS_MOVIE_TITLES:
+            continue
+
+        if label in {"PERSON", "ACTOR", "CHARACTER"}:
+            if text.islower():
+                continue
+
+            if len(text_lower) <= 2:
+                continue
+
+        if len(text.split()) == 1 and text.islower() and label != "ASPECT":
             continue
 
         out.append(e)
@@ -567,17 +902,98 @@ def _filter_ents(ents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return out
 
 
-@lru_cache(maxsize=4096)
-def _ner_packed(text: str) -> Tuple[Tuple[int, int, str, str], ...]:
-    t = clean_text(text)
+def extract_review_aspects(text: str) -> List[Dict[str, Any]]:
+    text = clean_text(text)
+    found = []
+    seen = set()
 
-    # Limit long reviews so modal loads faster
+    terms = sorted(REVIEW_ASPECT_TERMS.keys(), key=len, reverse=True)
+
+    for term in terms:
+        pattern = r"\b" + re.escape(term) + r"\b"
+
+        for match in re.finditer(pattern, text, flags=re.IGNORECASE):
+            start = match.start()
+            end = match.end()
+            actual_text = text[start:end]
+            key = (start, end, actual_text.lower())
+
+            if key in seen:
+                continue
+
+            seen.add(key)
+
+            found.append({
+                "text": actual_text,
+                "label": "ASPECT",
+                "original_label": "ASPECT",
+                "start": start,
+                "end": end,
+            })
+
+    found.sort(key=lambda x: (int(x["start"]), int(x["end"])))
+
+    return found
+
+
+def merge_and_clean_entities(entities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    priority = {
+        "ACTOR": 1,
+        "CHARACTER": 1,
+        "MOVIE_TITLE": 1,
+        "LOCATION": 1,
+        "ORGANIZATION": 1,
+        "PERSON": 2,
+        "GROUP": 2,
+        "ASPECT": 3,
+    }
+
+    cleaned = _filter_ents(entities)
+    cleaned.sort(key=lambda e: (
+        int(e.get("start", 0)),
+        priority.get(str(e.get("label", "")), 9),
+        int(e.get("end", 0))
+    ))
+
+    final = []
+    occupied_ranges = []
+
+    for e in cleaned:
+        start = int(e.get("start", 0))
+        end = int(e.get("end", 0))
+        text = str(e.get("text", "")).strip()
+
+        if not text:
+            continue
+
+        overlap = False
+
+        for os, oe in occupied_ranges:
+            if start < oe and end > os:
+                overlap = True
+                break
+
+        if overlap:
+            continue
+
+        final.append(e)
+        occupied_ranges.append((start, end))
+
+    final.sort(key=lambda x: (int(x["start"]), int(x["end"])))
+
+    return final
+
+
+@lru_cache(maxsize=4096)
+def _ner_packed(text: str) -> Tuple[Tuple[int, int, str, str, str], ...]:
+    t = clean_text(text)
     t = t[:2500]
 
-    # Run only one spaCy model
     doc = ner_base(t)
+    ner_ents = _doc_ents_to_json(doc)
+    aspect_ents = extract_review_aspects(t)
 
-    ents = _filter_ents(_doc_ents_to_json(doc))
+    ents = merge_and_clean_entities(ner_ents + aspect_ents)
 
     seen = set()
     clean_ents = []
@@ -585,6 +1001,7 @@ def _ner_packed(text: str) -> Tuple[Tuple[int, int, str, str], ...]:
     for e in ents:
         text_value = str(e.get("text", "")).strip()
         label = str(e.get("label", "")).strip()
+        original_label = str(e.get("original_label", label)).strip()
         start = int(e.get("start", 0))
         end = int(e.get("end", 0))
 
@@ -595,6 +1012,7 @@ def _ner_packed(text: str) -> Tuple[Tuple[int, int, str, str], ...]:
             clean_ents.append({
                 "text": text_value,
                 "label": label,
+                "original_label": original_label,
                 "start": start,
                 "end": end,
             })
@@ -602,7 +1020,13 @@ def _ner_packed(text: str) -> Tuple[Tuple[int, int, str, str], ...]:
     clean_ents.sort(key=lambda x: (int(x["start"]), int(x["end"])))
 
     return tuple(
-        (int(e["start"]), int(e["end"]), str(e["label"]), str(e["text"]))
+        (
+            int(e["start"]),
+            int(e["end"]),
+            str(e["label"]),
+            str(e["text"]),
+            str(e["original_label"]),
+        )
         for e in clean_ents
     )
 
@@ -616,8 +1040,9 @@ def ner_entities(text: str) -> List[Dict[str, Any]]:
             "end": e,
             "label": lab,
             "text": txt,
+            "original_label": original_lab,
         }
-        for (s, e, lab, txt) in packed
+        for (s, e, lab, txt, original_lab) in packed
     ]
 
 
@@ -662,6 +1087,7 @@ def ensure_min_entities(summary_text: str, ents_summary, ents_full, min_entities
         candidate = {
             "text": summary_text[m.start():m.end()],
             "label": lab,
+            "original_label": str(e.get("original_label", lab)),
             "start": m.start(),
             "end": m.end(),
         }
@@ -682,12 +1108,12 @@ def ensure_min_entities(summary_text: str, ents_summary, ents_full, min_entities
     return out
 
 
-# -------------------------
-# Review Insights
-# -------------------------
 def _classify_sentence_for_insight(sentence: str) -> str:
     sent = clean_text(sentence)
     lower = sent.lower()
+
+    if "?" in sent and any(word in lower for word in ["help", "huh", "why", "really"]):
+        return "negative"
 
     positive_exceptions = [
         "no bollywood masala",
@@ -700,6 +1126,9 @@ def _classify_sentence_for_insight(sentence: str) -> str:
         "go and watch",
         "learn from the best",
         "worth watching",
+        "classic western",
+        "star power",
+        "long-time fan",
     ]
 
     negative_exceptions = [
@@ -715,6 +1144,20 @@ def _classify_sentence_for_insight(sentence: str) -> str:
         "weak",
         "poor",
         "worst",
+        "goes down hill",
+        "down hill fast",
+        "downhill fast",
+        "ridiculousness",
+        "ridiculous",
+        "got worse",
+        "just got worse",
+        "almost leave the theater",
+        "so bad",
+        "plain terrible",
+        "cannot save this flop",
+        "flop",
+        "ugh",
+        "unable to hit their target",
     ]
 
     if any(p in lower for p in positive_exceptions):
@@ -742,10 +1185,69 @@ def _classify_sentence_for_insight(sentence: str) -> str:
     return "neutral"
 
 
+def build_detailed_final_opinion(
+    sentiment: Dict[str, Any],
+    positive_points: List[str],
+    negative_points: List[str],
+    summary_text: str,
+    rating=None,
+) -> str:
+    sentiment_label = sentiment.get("label", "Mixed")
+    rating_value = parse_rating_value(rating)
+
+    rating_context = ""
+
+    if rating_value is not None:
+        if rating_value >= 8:
+            rating_context = (
+                f" The numeric review rating is {rating_value:.1f}/10, which is clearly strong and supports a positive overall impression."
+            )
+        elif rating_value >= 7:
+            rating_context = (
+                f" The numeric review rating is {rating_value:.1f}/10, which is still fairly positive. "
+                "This means that even if the review contains harsh, scary, violent, or disturbing wording, those words may describe the movie’s content rather than the reviewer’s dislike."
+            )
+        elif rating_value >= 5:
+            rating_context = (
+                f" The numeric review rating is {rating_value:.1f}/10, which suggests a mixed or average opinion rather than a very strong reaction."
+            )
+        else:
+            rating_context = (
+                f" The numeric review rating is {rating_value:.1f}/10, which supports a negative overall impression."
+            )
+
+    if sentiment_label == "Positive":
+        return (
+            "The reviewer’s overall opinion is positive. "
+            "They may mention intense, uncomfortable, or critical details, but those comments do not necessarily mean they disliked the movie. "
+            "Instead, the review suggests that the movie was effective, memorable, or enjoyable enough to leave a good impression. "
+            "Overall, the reviewer would likely recommend the movie, especially to viewers who are interested in this genre or style."
+            + rating_context
+        )
+
+    if sentiment_label == "Negative":
+        return (
+            "The reviewer’s overall opinion is negative. "
+            "Although there may be a few small positive remarks, the stronger message of the review is disappointment or dissatisfaction. "
+            "The criticism seems to focus on important parts of the movie, such as story quality, pacing, execution, or overall enjoyment. "
+            "Because of that, the reviewer does not strongly recommend the movie."
+            + rating_context
+        )
+
+    return (
+        "The reviewer’s overall opinion is mixed. "
+        "The review contains both appreciation and criticism, so the final impression is not fully positive or fully negative. "
+        "Some elements of the movie appear to work well, while other parts reduce the reviewer’s enjoyment. "
+        "This means the movie may still be worth watching for some viewers, but it is not being praised without reservation."
+        + rating_context
+    )
+
+
 def generate_review_insights(
     text: str,
     summary_sents: List[str],
-    sentiment: Dict[str, Any]
+    sentiment: Dict[str, Any],
+    rating=None,
 ) -> Dict[str, Any]:
     text = clean_text(text)
     summary_text = " ".join(summary_sents).strip()
@@ -767,7 +1269,7 @@ def generate_review_insights(
     positive_points = positive_points[:3]
     negative_points = negative_points[:3]
 
-    sentiment_label = sentiment.get("label", "Neutral")
+    sentiment_label = sentiment.get("label", "Mixed")
 
     if sentiment_label == "Negative" and not negative_points:
         negative_points = summary_sents[:2] or [
@@ -779,21 +1281,28 @@ def generate_review_insights(
             "The review expresses a positive overall opinion but does not contain a clearly isolated positive sentence."
         ]
 
+    if sentiment_label == "Mixed":
+        if not positive_points:
+            positive_points = ["The review contains some favorable or appreciative observations."]
+        if not negative_points:
+            negative_points = ["The review also contains criticism or reservations about the movie."]
+
     if not positive_points:
         positive_points = ["The review does not clearly mention specific positive points."]
 
     if not negative_points:
         negative_points = ["The review does not clearly mention major negative points."]
 
-    if sentiment_label == "Positive":
-        final_opinion = "The reviewer generally has a positive opinion and recommends the movie."
-    elif sentiment_label == "Negative":
-        final_opinion = "The reviewer generally has a negative opinion and does not strongly recommend the movie."
-    else:
-        final_opinion = "The reviewer has a mixed or neutral opinion about the movie."
-
     if not summary_text:
         summary_text = "No clear summary could be generated from this review."
+
+    final_opinion = build_detailed_final_opinion(
+        sentiment=sentiment,
+        positive_points=positive_points,
+        negative_points=negative_points,
+        summary_text=summary_text,
+        rating=rating,
+    )
 
     return {
         "overall_summary": summary_text,
@@ -803,9 +1312,6 @@ def generate_review_insights(
     }
 
 
-# -------------------------
-# AI Confidence Score
-# -------------------------
 def calculate_ai_confidence(
     sentiment: Dict[str, Any],
     keywords: List[str],
@@ -817,6 +1323,8 @@ def calculate_ai_confidence(
     compound = abs(float(sentiment.get("compound", 0)))
     positive_hits = int(sentiment.get("positive_hits", 0))
     negative_hits = int(sentiment.get("negative_hits", 0))
+    vader_compound = float(sentiment.get("vader_compound", 0))
+    final_compound = float(sentiment.get("compound", 0))
 
     if compound >= 0.7:
         confidence += 20
@@ -846,6 +1354,15 @@ def calculate_ai_confidence(
     if len(summary_sents) >= 2:
         confidence += 7
 
+    if vader_compound > 0.5 and final_compound < -0.2:
+        confidence -= 15
+
+    if vader_compound < -0.5 and final_compound > 0.2:
+        confidence -= 15
+
+    if positive_hits > 0 and negative_hits > 0:
+        confidence -= 8
+
     confidence = max(0, min(confidence, 98))
 
     if confidence >= 80:
@@ -865,9 +1382,6 @@ def calculate_ai_confidence(
     }
 
 
-# -------------------------
-# Public API for the web app
-# -------------------------
 def list_movies() -> List[str]:
     return sorted(df_all[MOVIE_COL].dropna().astype(str).unique().tolist())
 
@@ -890,6 +1404,7 @@ def get_row_by_id(row_id: int) -> pd.Series:
 @lru_cache(maxsize=2048)
 def analyze_review(
     text: str,
+    rating=None,
     k_summary: int = 3,
     min_sent_len: int = 20,
     dedup_threshold: float = 0.75,
@@ -906,22 +1421,16 @@ def analyze_review(
 
     summary_text = " ".join(summary_sents).strip()
 
-    ents_full = ner_entities(text)
     ents_summary = ner_entities(summary_text) if summary_text else []
+    ents_summary = ents_summary[:15]
 
-    ents_summary = ensure_min_entities(
-        summary_text,
-        ents_summary,
-        ents_full,
-        min_entities=int(min_entities),
-    )
-
-    sentiment = analyze_sentiment(text)
+    sentiment = analyze_sentiment(text, rating=rating)
 
     insights = generate_review_insights(
         text=text,
         summary_sents=summary_sents,
         sentiment=sentiment,
+        rating=rating,
     )
 
     keywords = extract_keywords(text)

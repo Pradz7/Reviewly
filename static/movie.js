@@ -16,12 +16,133 @@ const detailLegend = document.getElementById("detailLegend");
 
 const MOVIE = window.__MOVIE__ || { movie_id: "", title: "" };
 
+const BLOCKED_ENTITY_WORDS = new Set([
+  "it", "its", "they", "them", "he", "she", "him", "her", "his", "hers",
+  "we", "you", "your", "i", "me", "my", "mine", "our", "ours", "their",
+  "theirs", "this", "that", "these", "those", "what", "whattt", "whatttt",
+  "whattttt", "huh", "yeah", "wow", "lol", "haha", "okay", "ok", "nope",
+  "yes", "no", "maybe", "thing", "stuff",
+
+  "open", "opened", "opening", "close", "closed", "closing", "start",
+  "started", "starting", "enter", "entered", "entering", "leave", "left",
+  "run", "runs", "running", "hide", "hiding", "ask", "asked", "asking",
+  "go", "goes", "going", "went", "know", "knowing", "think", "thinking",
+
+  "door", "garage", "building", "shelter", "trail", "car", "beast"
+]);
+
+const BLOCKED_LABELS = new Set([
+  "PRODUCT",
+  "CARDINAL",
+  "ORDINAL",
+  "QUANTITY",
+  "PERCENT",
+  "MONEY",
+  "TIME",
+  "DATE",
+  "LAW",
+  "LANGUAGE",
+  "IGNORE"
+]);
+
+const AMBIGUOUS_MOVIE_TITLES = new Set([
+  "it", "its", "us", "her", "up", "saw", "sing", "cars", "old", "fresh",
+  "home", "life", "room", "split", "mother", "nope", "what", "open",
+  "close", "run", "go", "big", "small", "yes", "no"
+]);
+
 function esc(s) {
   return String(s ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function isStretchedWord(text) {
+  const clean = String(text || "").trim().toLowerCase();
+
+  if (clean.length < 4) return false;
+
+  if (!/^[a-zA-Z]+$/.test(clean)) return false;
+
+  return /(.)\1{3,}/.test(clean);
+}
+
+function shouldRemoveEntity(entity) {
+  const text = String(entity?.text || "").trim();
+  const label = String(entity?.label || "").trim();
+  const originalLabel = String(entity?.original_label || "").trim();
+
+  const lower = text.toLowerCase();
+  const normalizedLabel = label.toUpperCase();
+  const normalizedOriginalLabel = originalLabel.toUpperCase();
+
+  if (!text || text.length < 2) return true;
+
+  if (BLOCKED_LABELS.has(normalizedLabel)) return true;
+
+  if (BLOCKED_LABELS.has(normalizedOriginalLabel)) return true;
+
+  if (BLOCKED_ENTITY_WORDS.has(lower)) return true;
+
+  if (isStretchedWord(lower)) return true;
+
+  if (/^[^\w]+$/.test(lower)) return true;
+
+  if (["MOVIE_TITLE", "WORK_OF_ART"].includes(normalizedLabel) && AMBIGUOUS_MOVIE_TITLES.has(lower)) {
+    return true;
+  }
+
+  if (["MOVIE_TITLE", "WORK_OF_ART"].includes(normalizedOriginalLabel) && AMBIGUOUS_MOVIE_TITLES.has(lower)) {
+    return true;
+  }
+
+  if (["PERSON", "ACTOR", "CHARACTER"].includes(normalizedLabel)) {
+    if (text === text.toLowerCase()) return true;
+    if (lower.length <= 2) return true;
+  }
+
+  if (text.split(/\s+/).length === 1 && text === text.toLowerCase() && normalizedLabel !== "ASPECT") {
+    return true;
+  }
+
+  return false;
+}
+
+function sanitizeEntities(entities) {
+  const safe = [];
+  const seen = new Set();
+
+  for (const entity of entities || []) {
+    if (shouldRemoveEntity(entity)) continue;
+
+    const start = Number(entity.start);
+    const end = Number(entity.end);
+
+    if (!Number.isFinite(start) || !Number.isFinite(end)) continue;
+
+    if (start < 0 || end <= start) continue;
+
+    const label = String(entity.label || "").trim();
+    const text = String(entity.text || "").trim();
+
+    const key = `${start}-${end}-${label}-${text.toLowerCase()}`;
+
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+
+    safe.push({
+      ...entity,
+      start,
+      end,
+      label,
+      text
+    });
+  }
+
+  return safe.sort((a, b) => a.start - b.start);
 }
 
 function openModal() {
@@ -48,8 +169,67 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+/*
+  IMPORTANT LAYOUT FIX:
+  This function forces the AI cards container to be directly inside .modal-body,
+  immediately after .review-top-grid.
+
+  This prevents Sentiment, Confidence, Keywords, and AI Review Insights
+  from staying inside the left or right column.
+*/
+function getDynamicAnalysisContainer() {
+  let container = document.getElementById("dynamicAnalysisCards");
+  const modalBody = document.querySelector(".modal-body");
+  const reviewTopGrid = document.querySelector(".review-top-grid");
+
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "dynamicAnalysisCards";
+  }
+
+  container.className = "analysis-grid";
+  container.removeAttribute("style");
+
+  if (modalBody && reviewTopGrid) {
+    if (container.parentElement !== modalBody) {
+      modalBody.insertBefore(container, reviewTopGrid.nextSibling);
+    } else if (container.previousElementSibling !== reviewTopGrid) {
+      modalBody.insertBefore(container, reviewTopGrid.nextSibling);
+    }
+  }
+
+  return container;
+}
+
+function clearDynamicAnalysisCards() {
+  const container = getDynamicAnalysisContainer();
+  container.innerHTML = "";
+}
+
+function cardWrapper(id, html) {
+  const container = getDynamicAnalysisContainer();
+
+  let box = document.getElementById(id);
+
+  if (!box) {
+    box = document.createElement("div");
+    box.id = id;
+  }
+
+  if (box.parentElement !== container) {
+    container.appendChild(box);
+  }
+
+  box.removeAttribute("style");
+  box.innerHTML = html;
+
+  return box;
+}
+
 function renderHighlighted(text, ents) {
-  const sorted = [...ents].sort((a, b) => a.start - b.start);
+  const safeEntities = sanitizeEntities(ents);
+  const sorted = [...safeEntities].sort((a, b) => a.start - b.start);
+
   let out = "";
   let cur = 0;
 
@@ -99,51 +279,28 @@ function percent(value) {
   return `${Math.round(n * 100)}%`;
 }
 
-function ensureSentimentBox() {
-  let box = document.getElementById("detailSentimentBox");
-
-  if (box) return box;
-
-  box = document.createElement("div");
-  box.id = "detailSentimentBox";
-  box.style.marginTop = "18px";
-
-  const summaryPanel = detailSummaryList.closest(".panel");
-
-  if (summaryPanel) {
-    summaryPanel.insertAdjacentElement("afterend", box);
-  } else {
-    detailSummaryList.insertAdjacentElement("afterend", box);
-  }
-
-  return box;
-}
-
 function renderSentiment(sentiment) {
-  const box = ensureSentimentBox();
-
   if (!sentiment) {
-    box.innerHTML = `
-      <div class="panel" style="margin-top: 18px;">
+    cardWrapper("detailSentimentBox", `
+      <div class="panel">
         <h3 style="margin: 0 0 12px; color: #F8FAFC;">Sentiment Analysis</h3>
         <p class="muted">No sentiment result available.</p>
       </div>
-    `;
+    `);
     return;
   }
 
-  const label = sentiment.label || "Neutral";
+  const label = sentiment.label || "Mixed";
   const compound = sentiment.compound ?? 0;
   const positive = sentiment.positive ?? 0;
   const neutral = sentiment.neutral ?? 0;
   const negative = sentiment.negative ?? 0;
   const colors = getSentimentColor(label);
 
-  box.innerHTML = `
+  cardWrapper("detailSentimentBox", `
     <div
       class="panel"
       style="
-        margin-top: 18px;
         border-color: ${colors.border};
         background: linear-gradient(145deg, ${colors.background}, transparent), #20202A;
       "
@@ -175,39 +332,17 @@ function renderSentiment(sentiment) {
         <div><strong style="color: #F87171;">Negative:</strong> ${percent(negative)}</div>
       </div>
     </div>
-  `;
-}
-
-function ensureConfidenceBox() {
-  let box = document.getElementById("detailConfidenceBox");
-
-  if (box) return box;
-
-  box = document.createElement("div");
-  box.id = "detailConfidenceBox";
-  box.style.marginTop = "18px";
-
-  const sentimentBox = document.getElementById("detailSentimentBox");
-
-  if (sentimentBox) {
-    sentimentBox.insertAdjacentElement("afterend", box);
-  } else {
-    detailSummaryList.insertAdjacentElement("afterend", box);
-  }
-
-  return box;
+  `);
 }
 
 function renderConfidence(confidence) {
-  const box = ensureConfidenceBox();
-
   if (!confidence) {
-    box.innerHTML = `
-      <div class="panel" style="margin-top: 18px;">
+    cardWrapper("detailConfidenceBox", `
+      <div class="panel">
         <h3 style="margin: 0 0 12px; color: #F8FAFC;">AI Confidence</h3>
         <p class="muted">No confidence score available.</p>
       </div>
-    `;
+    `);
     return;
   }
 
@@ -221,11 +356,10 @@ function renderConfidence(confidence) {
   if (level === "Medium") color = "#FFB703";
   if (level === "Low") color = "#F87171";
 
-  box.innerHTML = `
+  cardWrapper("detailConfidenceBox", `
     <div
       class="panel"
       style="
-        margin-top: 18px;
         border-color: ${color}66;
         background: linear-gradient(145deg, ${color}18, transparent), #20202A;
       "
@@ -265,50 +399,24 @@ function renderConfidence(confidence) {
         ${esc(reason)}
       </p>
     </div>
-  `;
-}
-
-function ensureKeywordsBox() {
-  let box = document.getElementById("detailKeywordsBox");
-
-  if (box) return box;
-
-  box = document.createElement("div");
-  box.id = "detailKeywordsBox";
-  box.style.marginTop = "18px";
-
-  const confidenceBox = document.getElementById("detailConfidenceBox");
-  const sentimentBox = document.getElementById("detailSentimentBox");
-
-  if (confidenceBox) {
-    confidenceBox.insertAdjacentElement("afterend", box);
-  } else if (sentimentBox) {
-    sentimentBox.insertAdjacentElement("afterend", box);
-  } else {
-    detailSummaryList.insertAdjacentElement("afterend", box);
-  }
-
-  return box;
+  `);
 }
 
 function renderKeywords(keywords) {
-  const box = ensureKeywordsBox();
-
   if (!keywords || keywords.length === 0) {
-    box.innerHTML = `
-      <div class="panel" style="margin-top: 18px;">
+    cardWrapper("detailKeywordsBox", `
+      <div class="panel">
         <h3 style="margin: 0 0 12px; color: #F8FAFC;">Keywords</h3>
         <p class="muted">No keywords detected.</p>
       </div>
-    `;
+    `);
     return;
   }
 
-  box.innerHTML = `
+  cardWrapper("detailKeywordsBox", `
     <div
       class="panel"
       style="
-        margin-top: 18px;
         border-color: rgba(76, 201, 240, 0.35);
         background: linear-gradient(145deg, rgba(76, 201, 240, 0.08), transparent), #20202A;
       "
@@ -335,56 +443,27 @@ function renderKeywords(keywords) {
         `).join("")}
       </div>
     </div>
-  `;
-}
-
-function ensureInsightsBox() {
-  let box = document.getElementById("detailInsightsBox");
-
-  if (box) return box;
-
-  box = document.createElement("div");
-  box.id = "detailInsightsBox";
-  box.style.marginTop = "18px";
-
-  const keywordsBox = document.getElementById("detailKeywordsBox");
-  const confidenceBox = document.getElementById("detailConfidenceBox");
-  const sentimentBox = document.getElementById("detailSentimentBox");
-
-  if (keywordsBox) {
-    keywordsBox.insertAdjacentElement("afterend", box);
-  } else if (confidenceBox) {
-    confidenceBox.insertAdjacentElement("afterend", box);
-  } else if (sentimentBox) {
-    sentimentBox.insertAdjacentElement("afterend", box);
-  } else {
-    detailSummaryList.insertAdjacentElement("afterend", box);
-  }
-
-  return box;
+  `);
 }
 
 function renderInsights(insights) {
-  const box = ensureInsightsBox();
-
   if (!insights) {
-    box.innerHTML = `
-      <div class="panel" style="margin-top: 18px;">
+    cardWrapper("detailInsightsBox", `
+      <div class="panel">
         <h3 style="margin: 0 0 12px; color: #F8FAFC;">AI Review Insights</h3>
         <p class="muted">No insight result available.</p>
       </div>
-    `;
+    `);
     return;
   }
 
   const positivePoints = insights.positive_points || [];
   const negativePoints = insights.negative_points || [];
 
-  box.innerHTML = `
+  cardWrapper("detailInsightsBox", `
     <div
       class="panel"
       style="
-        margin-top: 18px;
         border-color: rgba(255, 183, 3, 0.35);
         background: linear-gradient(145deg, rgba(255, 183, 3, 0.08), transparent), #20202A;
       "
@@ -427,7 +506,7 @@ function renderInsights(insights) {
         </p>
       </div>
     </div>
-  `;
+  `);
 }
 
 async function loadReviews() {
@@ -451,7 +530,7 @@ async function loadReviews() {
   reviewsEmptyPage.classList.add("hidden");
 
   reviewsListPage.innerHTML = reviews.map((r) => {
-    const rating = r.rating ? `⭐ ${esc(r.rating)}` : "⭐ N/A";
+    const rating = r.rating ? `⭐ Review: ${esc(r.rating)}/10` : "⭐ Review: N/A";
     const titleLine = r.review_title
       ? `<div class="reviewTitle">${esc(r.review_title)}</div>`
       : "";
@@ -485,7 +564,7 @@ async function loadReviewDetail(rowId) {
   openModal();
 
   detailMovie.textContent = MOVIE.title || "";
-  detailRatingBadge.textContent = "⭐ …";
+  detailRatingBadge.textContent = "⭐ Review: …";
   detailRowIdBadge.textContent = `ID ${rowId}`;
   detailTitleRow.classList.add("hidden");
   detailTitle.textContent = "";
@@ -493,6 +572,8 @@ async function loadReviewDetail(rowId) {
   detailSummaryList.innerHTML = `<li class="muted">Loading…</li>`;
   detailHighlighted.innerHTML = `<span class="muted">Loading…</span>`;
   detailLegend.innerHTML = "";
+
+  clearDynamicAnalysisCards();
 
   renderSentiment(null);
   renderConfidence(null);
@@ -506,6 +587,7 @@ async function loadReviewDetail(rowId) {
     detailOriginal.textContent = "";
     detailSummaryList.innerHTML = `<li class="muted">No summary produced.</li>`;
     detailHighlighted.innerHTML = `<span class="muted">Failed: ${esc(data.error || "")}</span>`;
+    clearDynamicAnalysisCards();
     renderSentiment(null);
     renderConfidence(null);
     renderKeywords([]);
@@ -513,7 +595,11 @@ async function loadReviewDetail(rowId) {
     return;
   }
 
-  detailRatingBadge.textContent = `⭐ ${data.rating || "N/A"}`;
+  const ratingText = data.rating && String(data.rating).trim() !== ""
+    ? `⭐ Review: ${data.rating}/10`
+    : "⭐ Review: N/A";
+
+  detailRatingBadge.textContent = ratingText;
 
   if (data.review_title && data.review_title.trim()) {
     detailTitleRow.classList.remove("hidden");
@@ -530,13 +616,8 @@ async function loadReviewDetail(rowId) {
     ? sents.map((s) => `<li>${esc(s)}</li>`).join("")
     : `<li class="muted">No summary produced.</li>`;
 
-  renderSentiment(data.sentiment);
-  renderConfidence(data.confidence);
-  renderKeywords(data.keywords || []);
-  renderInsights(data.insights);
-
   const summaryText = data.summary_text || "";
-  const ents = data.entities_summary || [];
+  const ents = sanitizeEntities(data.entities_summary || []);
 
   detailHighlighted.innerHTML = summaryText
     ? renderHighlighted(summaryText, ents)
@@ -545,8 +626,15 @@ async function loadReviewDetail(rowId) {
   const labels = [...new Set(ents.map((e) => e.label))];
 
   detailLegend.innerHTML = labels.length
-    ? labels.map((l) => `<span class="chip">${esc(l)}</span>`).join("")
+    ? labels.map((l) => `<span class="chip">${esc(String(l).replaceAll("_", " "))}</span>`).join("")
     : `<span class="muted">No entities found.</span>`;
+
+  clearDynamicAnalysisCards();
+
+  renderSentiment(data.sentiment);
+  renderConfidence(data.confidence);
+  renderKeywords(data.keywords || []);
+  renderInsights(data.insights);
 }
 
 loadReviews();
